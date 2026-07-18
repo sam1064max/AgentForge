@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="200" viewBox="0 0 720 200" role="img" aria-label="AgentForge">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect width="720" height="200" rx="16" fill="#0b1020"/>
+  <g fill="none" stroke="url(#g)" stroke-width="3">
+    <rect x="40" y="60" width="120" height="80" rx="10"/>
+    <rect x="300" y="60" width="120" height="80" rx="10"/>
+    <rect x="560" y="60" width="120" height="80" rx="10"/>
+    <path d="M160 100 H300 M420 100 H560"/>
+    <circle cx="240" cy="100" r="6" fill="url(#g)"/>
+    <circle cx="500" cy="100" r="6" fill="url(#g)"/>
+  </g>
+  <text x="360" y="40" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#e5e7eb" text-anchor="middle">AgentForge</text>
+  <text x="360" y="175" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="15" fill="#94a3b8" text-anchor="middle">The Kubernetes for AI Agents</text>
+</svg>
