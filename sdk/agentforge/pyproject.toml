@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentforge"
+version = "0.1.0"
+description = "Enterprise Agent Platform SDK for Building, Governing and Operating AI Agents at Scale"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+authors = [{ name = "AgentForge Authors" }]
+keywords = ["agentic-ai", "agents", "genai", "llm", "rag", "mcp", "ai-platform", "enterprise"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "pydantic>=2.6",
+    "httpx>=0.27",
+]
+
+[project.urls]
+Homepage = "https://agentforge.io"
+Documentation = "https://docs.agentforge.io"
+Repository = "https://github.com/sam1064max/AgentForge"
+Issues = "https://github.com/sam1064max/AgentForge/issues"
+
+[project.scripts]
+agentforge = "agentforge.cli.main:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.4", "mypy>=1.9", "pytest-asyncio>=0.23"]
+openai = ["openai>=1.30"]
+anthropic = ["anthropic>=0.27"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["agentforge"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B", "C4", "SIM"]
+ignore = ["B008", "C401", "C408", "SIM108"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_ignores = false
+ignore_missing_imports = true
