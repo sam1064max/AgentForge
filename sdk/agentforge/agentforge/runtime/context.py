@@ -45,7 +45,7 @@ class AgentContext:
     async def generate(
         self,
         *,
-        messages: list[Message] | list[dict[str, Any]],
+        messages: list[Message] | list[dict[str, Any]] | None = None,
         model: str | None = None,
         tools: list[Any] | None = None,
         temperature: float | None = None,
@@ -55,6 +55,8 @@ class AgentContext:
         """Convenience wrapper around the model gateway ``chat`` call."""
         if self.llm is None:
             raise RuntimeError("Model gateway not configured for this context")
+        if messages is None:
+            messages = self.metadata.get("history", [])
         if messages and isinstance(messages[0], dict):
             messages = [Message(**m) for m in messages]  # type: ignore[arg-type]
         if tools:

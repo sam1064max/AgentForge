@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Callable
 
 from agentforge.models.llm import LLMRequest, LLMResponse, Message, ToolCall
@@ -24,7 +24,7 @@ class MockLLM:
         if self._tool_calls:
             tc = self._tool_calls.pop(0)
             return LLMResponse(
-                message=Message(role="assistant", content="", tool_calls=[tc.__dict__]),
+                message=Message(role="assistant", content="", tool_calls=[asdict(tc)]),
                 tool_calls=[tc], model="mock", provider="mock",
             )
         text = self._responses.pop(0) if self._responses else "[mock] ok"
@@ -85,11 +85,12 @@ def _make_tool(name: str, mock: MockTool) -> Callable[..., Any]:
 
 
 def _tool_spec(name: str):
+    from agentforge.models.config import CircuitBreakerConfig, RateLimitConfig, RetryConfig
     from agentforge.tool import ToolSpec
     return ToolSpec(
-        name=name, description="mock", permissions=[], rate_limit=None, timeout=30,
-        retry_policy=None, circuit_breaker=None, execution_type="function", endpoint=None,
-        fn=lambda: None,
+        name=name, description="mock", permissions=[], rate_limit=RateLimitConfig(),
+        timeout=30, retry_policy=RetryConfig(), circuit_breaker=CircuitBreakerConfig(),
+        execution_type="function", endpoint=None, fn=lambda: None,
     )
 
 

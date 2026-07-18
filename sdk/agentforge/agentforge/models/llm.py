@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import Any
 
@@ -93,7 +93,7 @@ class LLMResponse:
     def to_dict(self) -> dict[str, Any]:
         return {
             "message": {"role": self.message.role, "content": self.message.content},
-            "tool_calls": [tc.__dict__ for tc in self.tool_calls],
+            "tool_calls": [asdict(tc) for tc in self.tool_calls],
             "model": self.model,
             "provider": self.provider,
             "tokens_input": self.tokens_input,
