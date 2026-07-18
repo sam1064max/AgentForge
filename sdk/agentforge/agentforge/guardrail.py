@@ -11,7 +11,7 @@ register Presidio/LLM-backed guardrails behind the same interface.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, ClassVar
 
 from agentforge.errors import GuardrailBlockedError
@@ -156,10 +156,18 @@ class GuardrailRegistry:
         return g
 
     async def run_input(self, text: str, guardrails: list[str], configs: dict[str, dict[str, Any]] | None = None) -> GuardrailResult:
-        return await self._run(text, guardrails, configs or {})
+        try:
+            return await self._run(text, guardrails, configs or {})
+        except GuardrailBlockedError as e:
+            findings = [GuardrailFinding(**f) for f in (getattr(e, "findings", None) or [])]
+            return GuardrailResult(passed=False, findings=findings, score=0.1)
 
     async def run_output(self, text: str, guardrails: list[str], configs: dict[str, dict[str, Any]] | None = None) -> GuardrailResult:
-        return await self._run(text, guardrails, configs or {})
+        try:
+            return await self._run(text, guardrails, configs or {})
+        except GuardrailBlockedError as e:
+            findings = [GuardrailFinding(**f) for f in (getattr(e, "findings", None) or [])]
+            return GuardrailResult(passed=False, findings=findings, score=0.1)
 
     async def _run(self, text: str, guardrails: list[str], configs: dict[str, dict[str, Any]]) -> GuardrailResult:
         results: list[GuardrailResult] = []
@@ -174,7 +182,7 @@ class GuardrailRegistry:
                 raise GuardrailBlockedError(
                     f"Blocked by guardrail '{name}'",
                     guardrail=name,
-                    findings=[f.__dict__ for f in res.findings],
+                    findings=[asdict(f) for f in res.findings],
                 )
         return GuardrailResult(
             passed=all(r.passed for r in results),

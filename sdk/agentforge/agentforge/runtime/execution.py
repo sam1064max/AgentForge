@@ -10,6 +10,7 @@ wrapping), applies output guardrails, and records the full observability trace.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import time
 import uuid
@@ -72,7 +73,7 @@ class ToolExecutor(ToolProvider):
         except Exception as e:  # noqa: BLE001
             st.failures += 1
             cb = spec.circuit_breaker
-            if st.failures >= cb.failure_threshold:
+            if cb is not None and st.failures >= cb.failure_threshold:
                 st.open_until = now + cb.recovery_timeout
             return ToolResult(success=False, error=str(e), latency_ms=int((time.perf_counter() - start) * 1000))
 
@@ -82,7 +83,9 @@ class ToolExecutor(ToolProvider):
         last_exc: Exception | None = None
         for attempt in range(attempts):
             try:
-                return await spec.fn(**args)
+                if inspect.iscoroutinefunction(spec.fn):
+                    return await spec.fn(**args)
+                return spec.fn(**args)
             except Exception as e:  # noqa: BLE001
                 last_exc = e
                 if attempt < attempts - 1:
@@ -141,14 +144,16 @@ class AgentRuntime:
             for name, fn in tools_override.items():
                 self.tools.register(fn)
 
+        # Seed conversation history (used when agents call ctx.generate() with no messages).
+        ctx.metadata["history"] = [Message(role="user", content=message)]
+
         with self.observability.span("agent.execute", agentforge_agent_id=spec.name, agentforge_execution_id=execution_id, agentforge_tenant_id=tenant_id) as root:  # noqa: E501
             # Input guardrails
             if spec.guardrails:
                 with self.observability.span("guardrail.input_check"):
-                    try:
-                        await self.guardrails.run_input(message, spec.guardrails)
-                    except GuardrailBlockedError as e:
-                        return ctx.to_result(output="", status="blocked", metadata={"error": str(e)})
+                    res = await self.guardrails.run_input(message, spec.guardrails)
+                    if not res.passed:
+                        return ctx.to_result(output="", status="blocked", metadata={"error": "blocked by input guardrail"})
 
             agent = self._instantiate(spec, ctx)
             hook = spec.hooks.get("on_message")
@@ -181,6 +186,7 @@ class AgentRuntime:
                     cost += last.cost
                     self.observability.record("agentforge.llm.tokens_total", last.total_tokens)
                     self.observability.record("agentforge.llm.cost_usd", last.cost)
+                    ctx.metadata.setdefault("history", []).append(last.message)
 
                     # Execute any tool calls the model requested, then loop.
                     if last.tool_calls:
@@ -206,12 +212,11 @@ class AgentRuntime:
             # Output guardrails
             if spec.guardrails:
                 with self.observability.span("guardrail.output_check"):
-                    try:
-                        res = await self.guardrails.run_output(output, spec.guardrails)
-                        if res.modified_text is not None:
-                            output = res.modified_text
-                    except GuardrailBlockedError as e:
-                        return ctx.to_result(output="", status="blocked", metadata={"error": str(e)})
+                    res = await self.guardrails.run_output(output, spec.guardrails)
+                    if not res.passed:
+                        return ctx.to_result(output="", status="blocked", metadata={"error": "blocked by output guardrail"})
+                    if res.modified_text is not None:
+                        output = res.modified_text
 
         return ctx.to_result(
             output=output,

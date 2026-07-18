@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import functools
 import inspect
+import typing
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -37,28 +38,19 @@ class ToolSpec:
 def _build_json_schema(fn: Callable[..., Any]) -> dict[str, Any]:
     """Best-effort JSON schema generation from type hints + docstring."""
     sig = inspect.signature(fn)
+    try:
+        hints = typing.get_type_hints(fn)
+    except Exception:  # noqa: BLE001
+        hints = {}
+    doc = inspect.getdoc(fn) or ""
     properties: dict[str, Any] = {}
     required: list[str] = []
     for pname, param in sig.parameters.items():
         if pname in ("self", "ctx", "context"):
             continue
-        annotation = param.annotation
-        if annotation is inspect.Parameter.empty:
-            ptype = "string"
-        elif annotation is int:
-            ptype = "integer"
-        elif annotation is float:
-            ptype = "number"
-        elif annotation is bool:
-            ptype = "boolean"
-        elif annotation is list or getattr(annotation, "__origin__", None) in (list,):
-            ptype = "array"
-        elif annotation is dict or getattr(annotation, "__origin__", None) in (dict,):
-            ptype = "object"
-        else:
-            ptype = "string"
+        annotation = hints.get(pname, param.annotation)
+        ptype = _json_type(annotation)
         prop: dict[str, Any] = {"type": ptype}
-        doc = inspect.getdoc(fn) or ""
         prop["description"] = _extract_param_doc(doc, pname)
         properties[pname] = prop
         if param.default is inspect.Parameter.empty:
@@ -68,6 +60,30 @@ def _build_json_schema(fn: Callable[..., Any]) -> dict[str, Any]:
         "properties": properties,
         "required": required,
     }
+
+
+def _json_type(annotation: Any) -> str:
+    import typing as _t
+
+    if annotation is inspect.Parameter.empty or annotation is None:
+        return "string"
+    origin = getattr(annotation, "__origin__", None)
+    if annotation is int or annotation is _t.get_origin(int):
+        return "integer"
+    if annotation is float:
+        return "number"
+    if annotation is bool:
+        return "boolean"
+    if annotation is str:
+        return "string"
+    if annotation in (list, tuple) or origin in (list, tuple):
+        return "array"
+    if annotation is dict or origin is dict:
+        return "object"
+    # Handle string annotations like "bool" from __future__ imports.
+    name = getattr(annotation, "__name__", str(annotation))
+    return {"int": "integer", "float": "number", "bool": "boolean", "str": "string",
+            "list": "array", "dict": "object"}.get(name, "string")
 
 
 def _extract_param_doc(doc: str, param: str) -> str:
