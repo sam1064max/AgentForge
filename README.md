@@ -138,27 +138,43 @@ spec:
 ```
 AgentForge/
 ├── apps/            # Service entrypoints (api-gateway, portals, schedulers)
-├── services/        # Microservice implementations (runtime, model-gateway, ...)
+├── services/        # Microservice implementations (control-plane, ...)
 ├── sdk/             # agentforge — the Python SDK (pip-installable)
 ├── libs/            # Shared libraries (core, abstractions, storage backends)
 ├── docs/            # Documentation, architecture, ADRs
-├── examples/        # Working examples (minimal, rag, financial, research, ...)
+├── examples/        # Working examples (order-agent, rag-agent)
 ├── infra/           # Terraform, Helm, Docker, Kubernetes manifests
 ├── scripts/         # Build, release, and dev tooling
 ├── tests/           # Cross-cutting integration & e2e tests
 └── benchmarks/      # Performance and quality benchmarks
 ```
 
+## ✅ What's implemented (v0.1.0)
+
+| Subsystem | Status |
+|---|---|
+| Core SDK (`@Agent`, `@Tool` decorators, models, types) | ✅ |
+| Agent Runtime (execution engine, tool executor, resilience) | ✅ |
+| Memory (in-memory provider + facade) | ✅ |
+| Knowledge & RAG (chunking, hybrid retriever, context builder) | ✅ |
+| Guardrails (PII, prompt-injection, topic, toxicity, format) | ✅ |
+| Governance (policy engine + audit) | ✅ |
+| Observability (local sink) | ✅ |
+| Evaluation (suite, metrics, datasets) | ✅ |
+| Control Plane (agent registry + deployment lifecycle API) | ✅ |
+| Examples (order-agent, rag-agent) | ✅ |
+| Packaging (Dockerfiles, Helm chart) + CI | ✅ |
+
+> Backends (PostgreSQL, Qdrant, Kafka, Temporal) are abstracted behind
+> interfaces with local-friendly in-memory/mock defaults, so the platform runs
+> with zero external services. See `docs/adr/`.
+
 ## 🧪 Examples
 
 | Example | Description |
 |---|---|
-| [`minimal-agent`](examples/minimal-agent) | Smallest possible agent |
-| [`rag-agent`](examples/rag-agent) | RAG-powered knowledge agent |
-| [`financial-advisor`](examples/financial-advisor) | Tool-using advisor with guardrails |
-| [`research-agent`](examples/research-agent) | Multi-agent research orchestration |
-| [`support-agent`](examples/support-agent) | Customer support with HITL |
-| [`coding-agent`](examples/coding-agent) | Tool-calling coding assistant |
+| [`order-agent`](examples/order-agent.py) | Tool-using order-status agent (end-to-end vs mock gateway) |
+| [`rag-agent`](examples/rag_agent.py) | Chunking + hybrid retrieval + context construction demo |
 
 ## 📊 Roadmap
 

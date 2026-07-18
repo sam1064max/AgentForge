@@ -1,0 +1,24 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/sam1064max/agentforge-control-plane
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Tenant isolation is enforced at the API boundary via the X-Tenant-Id header;
+# a real deployment fronts this with an authenticated ingress + OPA (docs/adr/0006).
+ingress:
+  enabled: false
+  host: agentforge.local
